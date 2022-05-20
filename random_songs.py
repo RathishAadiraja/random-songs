@@ -27,6 +27,8 @@ class GetRandomSongs():
             responses = await asyncio.gather(*url_list)
             for res in responses:
                 self.random_words.append(await res.json())
+            self.random_words = [i[0]['word'] for i in self.random_words]
+            self.random_words = [i.lower() for i in self.random_words]
     
     def run_get_random_words(self) -> list:
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -34,10 +36,14 @@ class GetRandomSongs():
         return self.random_words
 
 
+def main():
+    user1 = GetRandomSongs()
+    user1.get_number_of_songs()
+    print(user1.number_of_songs)
+    random_words = user1.run_get_random_words()
+    print(random_words)
+
+if __name__ == '__main__':
+    main()
 
 
-user1 = GetRandomSongs()
-user1.get_number_of_songs()
-print(user1.number_of_songs)
-random_words = user1.run_get_random_words()
-print(random_words)
