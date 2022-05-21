@@ -1,11 +1,11 @@
 import asyncio
 import aiohttp
 import random 
+import time
 
 ASCII_ALPHABET_LOWER_MIN = 97
 ASCII_ALPHABET_LOWER_MAX = 122
-MAX_DUPLICATE_WORD_FETCH_LIMIT = 5
-MAX_RECORDINGS_FETCH_LIMIT = 5
+MAX_FETCH_LIMIT = 5
 MIN_RANDOM_WORDS_NUM = 5
 MAX_RANDOM_WORDS_NUM = 20
 RANDOM_WORDS_URL = 'https://random-words-api.vercel.app/word'
@@ -29,31 +29,25 @@ class GetRandomSongs():
             print("Input must be number. Considering 5 random songs :)")
             return 0
 
-    def get_sessions(self, session, fetch_url, fetch_nums) -> list:
+    def get_words_sessions(self, session, fetch_nums) -> list:
         session_list = []
-        if fetch_url == RANDOM_WORDS_URL:
-            for i in range(fetch_nums):
-                session_list.append(session.get(fetch_url, ssl=False))
-            return session_list
-        elif fetch_url == MUSICBRAINZ_URL:
-            for word in self.random_words:
-                session_list.append(session.get(fetch_url.format(word, MAX_RECORDINGS_FETCH_LIMIT), ssl=False))
-            return session_list
-        else:
-            return session_list
-    
+        for i in range(fetch_nums):
+            session_list.append(session.get(RANDOM_WORDS_URL, ssl=False))
+        return session_list
+        
     
     async def get_random_words(self) -> None:
-        max_iter = MAX_DUPLICATE_WORD_FETCH_LIMIT
+        max_iter = MAX_FETCH_LIMIT
         names_to_fetch = self.get_number_of_words_from_user()
 
         async with aiohttp.ClientSession() as session:
             for i in range(max_iter):
                 temp_random_words = []
-                url_list = self.get_sessions(session, self.random_words_url, names_to_fetch)
+                url_list = self.get_words_sessions(session, names_to_fetch)
                 responses = await asyncio.gather(*url_list)
                 for res in responses:
                     temp_random_words.append(await res.json())
+
                 temp_random_words = [i[0]['word'] for i in temp_random_words]
                 temp_random_words = [i.lower() for i in temp_random_words]
 
@@ -67,6 +61,14 @@ class GetRandomSongs():
                     self.random_words += [chr(i) for i in alphabet_list]
                 else:
                     break
+            
+        print(self.random_words)
+
+    def get_songs_sessions(self, session, words_to_fetch) -> list:
+        session_list = []
+        for word in words_to_fetch:
+            session_list.append(session.get(MUSICBRAINZ_URL.format(word, MAX_FETCH_LIMIT), ssl=False))
+        return session_list
     
     def duplicate_songs_exists(self, current_title, current_artist, current_album) -> bool:
             for song in self.random_songs:
@@ -75,18 +77,23 @@ class GetRandomSongs():
             return False
     
     async def get_random_songs(self) -> None:
-        async with aiohttp.ClientSession() as session:      
-            url_list = self.get_sessions(session, self.musicbrainz_url, 0)
-            responses = await asyncio.gather(*url_list)
+        max_iter = MAX_FETCH_LIMIT
 
+        async with aiohttp.ClientSession() as session:      
+            url_list = self.get_songs_sessions(session, self.random_words)
+            responses = await asyncio.gather(*url_list)
             for res in responses: 
                 temp_json = await res.json()
+                if 'error' in temp_json.keys():
+                    break
+                
                 temp_dict = {}
+
                 total_recordings = len(temp_json['recordings'])
 
                 if(total_recordings > 0):
                     top_song = top_artist = top_release = 0
-                    max_recordings_iter = total_recordings if total_recordings < MAX_RECORDINGS_FETCH_LIMIT else MAX_RECORDINGS_FETCH_LIMIT
+                    max_recordings_iter = total_recordings if total_recordings < MAX_FETCH_LIMIT else MAX_FETCH_LIMIT
 
                     for i in range(max_recordings_iter):
                         temp_dict['title'] = temp_json['recordings'][top_song]['title']
@@ -102,19 +109,24 @@ class GetRandomSongs():
 
                 self.random_songs.append(temp_dict)
                 
+
     def print_words_and_songs(self) -> None:
-        if len(self.random_words) == len(self.random_songs):
-            for word, song in zip(self.random_words, self.random_songs):
-                print("___________________________________________________")
-                print(f"\nRandom word - {word}\n")
-                if (song['title']):
-                    print(f"Song associated with this word: ")
-                    print(f"Title - {song['title']}")
-                    print(f"Artist - {song['artist']}")
-                    print(f"Album - {song['album']}")
-                else:
-                    print("No recording found for this word :(")
-                print("___________________________________________________")
+        if len(self.random_words) != len(self.random_songs):
+            print('Could not fetch enough songs[API fetch limit reached] :( \nShowing only the fetched songs...')
+            self.random_words = self.random_words[:len(self.random_songs)]
+        
+        for word, song in zip(self.random_words, self.random_songs):
+            print("___________________________________________________")
+            print(f"\nRandom word - {word}\n")
+            if (song['title']):
+                print(f"Song associated with this word: ")
+                print(f"Title - {song['title']}")
+                print(f"Artist - {song['artist']}")
+                print(f"Album - {song['album']}")
+            else:
+                print("No recording found for this word :(")
+            print("___________________________________________________")
+        
 
 
     def run_get_words_and_songs(self) -> tuple:
