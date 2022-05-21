@@ -19,6 +19,9 @@ class GetRandomSongs():
         self.number_of_words = MIN_RANDOM_WORDS_NUM
         self.random_words = []
         self.random_songs = []
+        self.random_words_and_songs = {
+            'data': []
+        }
 
     def get_number_of_words_from_user(self) -> int:
         try:
@@ -35,6 +38,7 @@ class GetRandomSongs():
 
     def get_words_sessions(self, session, fetch_nums) -> list:
         session_list = []
+        print(type(session))
         for i in range(fetch_nums):
             session_list.append(session.get(RANDOM_WORDS_URL, ssl=False))
         return session_list
@@ -113,20 +117,29 @@ class GetRandomSongs():
 
                 self.random_songs.append(temp_dict)
      
-
-    def print_words_and_songs(self) -> None:
+    def make_words_and_songs_dict(self):
+        self.random_words_and_songs['data'] = []
         if len(self.random_words) != len(self.random_songs):
-            print('Could not fetch enough songs[API fetch limit reached] :( \nShowing only the fetched songs...')
             self.random_words = self.random_words[:len(self.random_songs)]
         
         for word, song in zip(self.random_words, self.random_songs):
+            temp = {}
+            temp['word'] = word
+            temp['title'] = song['title']
+            temp['artist'] = song['artist']
+            temp['album'] = song['album']
+            self.random_words_and_songs['data'].append(temp) 
+
+    def print_words_and_songs(self) -> None:
+        
+        for item in self.random_words_and_songs['data']:
             print("___________________________________________________")
-            print(f"\nRandom word - {word}\n")
-            if (song['title']):
+            print(f"\nRandom word - {item['word']}\n")
+            if (item['title']):
                 print(f"Song associated with this word: ")
-                print(f"Title - {song['title']}")
-                print(f"Artist - {song['artist']}")
-                print(f"Album - {song['album']}")
+                print(f"Title - {item['title']}")
+                print(f"Artist - {item['artist']}")
+                print(f"Album - {item['album']}")
             else:
                 print("No recording found for this word :(")
             print("___________________________________________________")
@@ -137,6 +150,7 @@ class GetRandomSongs():
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         asyncio.run(self.fetch_random_words())
         asyncio.run(self.fetch_random_songs())
+        self.make_words_and_songs_dict()
         self.print_words_and_songs()
         return zip(self.random_words, self.random_songs)
 
