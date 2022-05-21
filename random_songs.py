@@ -1,7 +1,6 @@
 import asyncio
 import aiohttp
 import random 
-import time
 
 ASCII_ALPHABET_LOWER_MIN = 97
 ASCII_ALPHABET_LOWER_MAX = 122
@@ -18,6 +17,7 @@ class GetRandomSongs():
         self.number_of_words = MIN_RANDOM_WORDS_NUM
         self.random_words = []
         self.random_songs = []
+        self.words_and_songs = {}
 
     def get_number_of_words_from_user(self) -> int:
         try:
@@ -38,12 +38,12 @@ class GetRandomSongs():
     
     async def get_random_words(self) -> None:
         max_iter = MAX_FETCH_LIMIT
-        names_to_fetch = self.get_number_of_words_from_user()
+        number_of_names_to_fetch = self.get_number_of_words_from_user()
 
         async with aiohttp.ClientSession() as session:
             for i in range(max_iter):
                 temp_random_words = []
-                url_list = self.get_words_sessions(session, names_to_fetch)
+                url_list = self.get_words_sessions(session, number_of_names_to_fetch)
                 responses = await asyncio.gather(*url_list)
                 for res in responses:
                     temp_random_words.append(await res.json())
@@ -55,13 +55,13 @@ class GetRandomSongs():
                 duplicate_len = self.number_of_words - len(self.random_words)
 
                 if  duplicate_len > 0:
-                    names_to_fetch = duplicate_len
+                    number_of_names_to_fetch = duplicate_len
                 elif duplicate_len > 0 and i == max_iter-1:
                     alphabet_list = list(random.sample(range(ASCII_ALPHABET_LOWER_MIN, ASCII_ALPHABET_LOWER_MAX+1), duplicate_len))
                     self.random_words += [chr(i) for i in alphabet_list]
                 else:
                     break
-            
+        self.random_words = sorted(self.random_words)   
         print(self.random_words)
 
     def get_songs_sessions(self, session, words_to_fetch) -> list:
@@ -77,19 +77,17 @@ class GetRandomSongs():
             return False
     
     async def get_random_songs(self) -> None:
-        max_iter = MAX_FETCH_LIMIT
-
         async with aiohttp.ClientSession() as session:      
             url_list = self.get_songs_sessions(session, self.random_words)
             responses = await asyncio.gather(*url_list)
             for res in responses: 
                 temp_json = await res.json()
                 if 'error' in temp_json.keys():
-                    break
+                    total_recordings = 0
+                else:
+                    total_recordings = len(temp_json['recordings'])  
                 
                 temp_dict = {}
-
-                total_recordings = len(temp_json['recordings'])
 
                 if(total_recordings > 0):
                     top_song = top_artist = top_release = 0
