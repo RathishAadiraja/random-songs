@@ -9,6 +9,7 @@ MAX_WORD_FETCH_ITER = 5
 class GetRandomSongs():
     def __init__(self) -> None:
         self.random_words_url = 'https://random-words-api.vercel.app/word'
+        self.musicbrainz_url = 'http://musicbrainz.org/ws/2/recording/?query={}&limit=2&fmt=json'
         self.number_of_songs = 5
         self.random_words = []
 
@@ -20,10 +21,10 @@ class GetRandomSongs():
         except:
             print("Input must be number. Considering 5 random songs :)")
 
-    def get_session(self, session, num_songs) -> list:
+    def get_session(self, session, fetch_url, fetch_nums) -> list:
         session_list = []
-        for i in range(num_songs):
-            session_list.append(session.get(self.random_words_url, ssl=False))
+        for i in range(fetch_nums):
+            session_list.append(session.get(fetch_url, ssl=False))
         return session_list
     
     async def get_random_words(self) -> None:
@@ -33,7 +34,7 @@ class GetRandomSongs():
         async with aiohttp.ClientSession() as session:
             for i in range(max_iter):
                 temp_random_words = []
-                url_list = self.get_session(session, names_to_fetch)
+                url_list = self.get_session(session, self.random_words_url, names_to_fetch)
                 responses = await asyncio.gather(*url_list)
                 for res in responses:
                     temp_random_words.append(await res.json())
@@ -54,7 +55,32 @@ class GetRandomSongs():
     def run_get_random_words(self) -> list:
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         asyncio.run(self.get_random_words())
+        asyncio.run(self.get_random_songs())
         return self.random_words
+
+    async def get_random_songs(self) -> None:
+        async with aiohttp.ClientSession() as session: 
+            for word in self.random_words:    
+                temp_random_songs = []
+                temp_url = self.musicbrainz_url.format(word)
+                url_list = self.get_session(session, temp_url, 1)
+                responses = await asyncio.gather(*url_list)
+                for res in responses: 
+                    temp_json = await res.json()
+                    temp_dict = {}
+                    if(len(temp_json['recordings']) > 0):
+                        temp_dict['title'] = temp_json['recordings'][0]['title']
+                        temp_dict['artist'] =  temp_json['recordings'][0]['artist-credit'][0]['name']
+                        temp_dict['album'] = temp_json['recordings'][0]['releases'][0]['title']
+                    else:
+                        temp_dict['title'] = 'No recording found'
+                        temp_dict['artist'] =  'No recording found'
+                        temp_dict['album'] = 'No recording found'
+                    temp_random_songs.append(temp_dict)
+                
+                print(temp_random_songs)
+
+        
 
 
 def main():
