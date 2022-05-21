@@ -1,5 +1,4 @@
 import asyncio
-from tarfile import DEFAULT_FORMAT
 import aiohttp
 import random 
 
@@ -79,7 +78,7 @@ class GetRandomSongs():
         async with aiohttp.ClientSession() as session:      
             url_list = self.get_sessions(session, self.musicbrainz_url, 0)
             responses = await asyncio.gather(*url_list)
-            
+
             for res in responses: 
                 temp_json = await res.json()
                 temp_dict = {}
@@ -100,24 +99,37 @@ class GetRandomSongs():
                             break
                 else:
                     temp_dict['title'] = temp_dict['artist'] = temp_dict['album']  = None
-        
+
                 self.random_songs.append(temp_dict)
                 
+    def print_words_and_songs(self) -> None:
+        if len(self.random_words) == len(self.random_songs):
+            for word, song in zip(self.random_words, self.random_songs):
+                print("___________________________________________________")
+                print(f"\nRandom word - {word}\n")
+                if (song['title']):
+                    print(f"Song associated with this word: ")
+                    print(f"Title - {song['title']}")
+                    print(f"Artist - {song['artist']}")
+                    print(f"Album - {song['album']}")
+                else:
+                    print("No recording found for this word :(")
+                print("___________________________________________________")
+
 
     def run_get_words_and_songs(self) -> tuple:
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         asyncio.run(self.get_random_words())
         asyncio.run(self.get_random_songs())
-        return self.random_words
+        self.print_words_and_songs()
+        return zip(self.random_words, self.random_songs)
 
         
 
 
 def main():
     user1 = GetRandomSongs()
-    user1.run_get_words_and_songs()
-    print(user1.random_words)
-    print(user1.random_songs)
+    words_and_songs = user1.run_get_words_and_songs()
 
 if __name__ == '__main__':
     main()
