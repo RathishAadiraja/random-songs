@@ -19,7 +19,6 @@ class GetRandomSongs():
         self.number_of_words = MIN_RANDOM_WORDS_NUM
         self.random_words = []
         self.random_songs = []
-        self.words_and_songs = {}
 
     def get_number_of_words_from_user(self) -> int:
         try:
@@ -113,9 +112,7 @@ class GetRandomSongs():
                     temp_dict['title'] = temp_dict['artist'] = temp_dict['album']  = None
 
                 self.random_songs.append(temp_dict)
-
-    def words_and_songs_dict_format():
-        pass       
+     
 
     def print_words_and_songs(self) -> None:
         if len(self.random_words) != len(self.random_songs):
