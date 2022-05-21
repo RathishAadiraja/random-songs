@@ -69,17 +69,35 @@ class GetRandomSongs():
                 else:
                     break
     
+    def duplicate_songs_exists(self, current_title, current_artist, current_album) -> bool:
+            for song in self.random_songs:
+                if song['title'] == current_title and song['artist'] == current_artist and song['album'] == current_album:
+                    return True
+            return False
+    
     async def get_random_songs(self) -> None:
         async with aiohttp.ClientSession() as session:      
             url_list = self.get_sessions(session, self.musicbrainz_url, 0)
             responses = await asyncio.gather(*url_list)
+            
             for res in responses: 
                 temp_json = await res.json()
                 temp_dict = {}
-                if(len(temp_json['recordings']) > 0):
-                    temp_dict['title'] = temp_json['recordings'][0]['title']
-                    temp_dict['artist'] =  temp_json['recordings'][0]['artist-credit'][0]['name']
-                    temp_dict['album'] = temp_json['recordings'][0]['releases'][0]['title']
+                total_recordings = len(temp_json['recordings'])
+
+                if(total_recordings > 0):
+                    top_song = top_artist = top_release = 0
+                    max_recordings_iter = total_recordings if total_recordings < MAX_RECORDINGS_FETCH_LIMIT else MAX_RECORDINGS_FETCH_LIMIT
+
+                    for i in range(max_recordings_iter):
+                        temp_dict['title'] = temp_json['recordings'][top_song]['title']
+                        temp_dict['artist'] =  temp_json['recordings'][top_song]['artist-credit'][top_artist]['name']
+                        temp_dict['album'] = temp_json['recordings'][top_song]['releases'][top_release]['title']
+
+                        if self.duplicate_songs_exists(temp_dict['title'], temp_dict['artist'] , temp_dict['album']):
+                            top_song += 1
+                        else:
+                            break
                 else:
                     temp_dict['title'] = temp_dict['artist'] = temp_dict['album']  = None
         
