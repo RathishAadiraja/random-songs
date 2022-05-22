@@ -19,7 +19,7 @@ class GetRandomSongs():
         self.number_of_words = MIN_RANDOM_WORDS_NUM
         self.random_words = []
         self.random_songs = []
-        self.random_words_and_songs = {
+        self.random_words_and_songs_dict = {
             'data': []
         }
 
@@ -80,12 +80,6 @@ class GetRandomSongs():
             session_list.append(session.get(MUSICBRAINZ_URL.format(word, MAX_FETCH_LIMIT), ssl=False))
         return session_list
     
-    def duplicate_songs_exists(self, current_title, current_artist, current_album) -> bool:
-        for song in self.random_songs:
-            if song['title'] == current_title and song['artist'] == current_artist and song['album'] == current_album:
-                return True
-        return False
-    
     async def fetch_random_songs(self) -> None:
         async with aiohttp.ClientSession() as session:      
             url_list = self.get_songs_sessions(session, self.random_words)
@@ -108,7 +102,7 @@ class GetRandomSongs():
                         temp_dict['artist'] =  temp_json['recordings'][top_song]['artist-credit'][top_artist]['name']
                         temp_dict['album'] = temp_json['recordings'][top_song]['releases'][top_release]['title']
 
-                        if self.duplicate_songs_exists(temp_dict['title'], temp_dict['artist'] , temp_dict['album']):
+                        if temp_dict in self.random_songs:
                             top_song += 1
                         else:
                             break
@@ -118,7 +112,7 @@ class GetRandomSongs():
                 self.random_songs.append(temp_dict)
      
     def make_words_and_songs_dict(self):
-        self.random_words_and_songs['data'] = []
+        self.random_words_and_songs_dict['data'] = []
         if len(self.random_words) != len(self.random_songs):
             self.random_words = self.random_words[:len(self.random_songs)]
         
@@ -128,11 +122,11 @@ class GetRandomSongs():
             temp['title'] = song['title']
             temp['artist'] = song['artist']
             temp['album'] = song['album']
-            self.random_words_and_songs['data'].append(temp) 
+            self.random_words_and_songs_dict['data'].append(temp) 
 
     def print_words_and_songs(self) -> None:
         
-        for item in self.random_words_and_songs['data']:
+        for item in self.random_words_and_songs_dict['data']:
             print("___________________________________________________")
             print(f"\nRandom word - {item['word']}\n")
             if (item['title']):
@@ -146,13 +140,13 @@ class GetRandomSongs():
         
 
 
-    def run_get_words_and_songs(self) -> tuple:
+    def run_get_words_and_songs(self) -> dict:
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         asyncio.run(self.fetch_random_words())
         asyncio.run(self.fetch_random_songs())
         self.make_words_and_songs_dict()
         self.print_words_and_songs()
-        return zip(self.random_words, self.random_songs)
+        return self.random_words_and_songs_dict
 
         
 
