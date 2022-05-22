@@ -7,7 +7,7 @@ A python console application to fetch user-defined number of random words betwee
 git clone https://github.com/RathishAadiraja/random-songs.git
 ```
 ## How to run it?
-- change the directory to random-songs directory
+- change the working directory to random-songs directory
 ```
 cd random-songs
 ```
