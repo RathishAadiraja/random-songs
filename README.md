@@ -25,7 +25,7 @@ python -m venv env
 python random_songs.py
 ```
 ## How to use it?
-- after running the above instructions the user will be asked to enter number of words to fetch
+- after running the above commands the user will be asked to enter number of words to fetch
 - the user must enter a value between 5 to 20, if not default value is used
 - the result will be displayed on the console, it contains 
   - whole list of pulled unique and ordered random words
@@ -34,3 +34,4 @@ python random_songs.py
     - song title
     - song artist
     - song album
+- if there are no recordings found for the random word, it displays only the word along with the message 'no recordings found'
