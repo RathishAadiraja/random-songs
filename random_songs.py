@@ -34,8 +34,8 @@ class GetRandomSongs:
         the minimum number of words to fetch (5) is considered as default value
         """
         try:
-            print("Wanna know some random words and the songs associated with those words?")
-            print("Enter the number of random words you wanna know")
+            print("\nWanna know some random words and the songs associated with those words?")
+            print("\nEnter the number of random words you wanna know")
             temp_num =  int(input("The number must be between 5 to 20: "))
             if MIN_RANDOM_WORDS_NUM <= temp_num <= MAX_RANDOM_WORDS_NUM:
                 self.number_of_words = temp_num
@@ -88,7 +88,9 @@ class GetRandomSongs:
                     break
 
         self.random_words = sorted(self.random_words)
-        print(self.random_words)
+        print('\n')
+        print(*self.random_words, sep = ", ") 
+    
 
     def get_songs_sessions(self, session: aiohttp.client.ClientSession, words_to_fetch: list = []) -> list:
         """
@@ -181,7 +183,6 @@ class GetRandomSongs:
         asyncio.run(self.fetch_random_songs())
         self.make_words_and_songs_dict()
         self.print_words_and_songs()
-        print(len(self.random_words_and_songs_dict['data']))
         return self.random_words_and_songs_dict
 
 def main():
